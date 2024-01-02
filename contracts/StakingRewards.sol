@@ -137,9 +137,9 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     /* ========== RESTRICTED FUNCTIONS ========== */
 
     function notifyRewardAmount(uint256 reward) external onlyRewardsDistribution updateReward(address(0)) {
-        // 超过奖励结束周期了
         if (block.timestamp >= periodFinish) {
             // 重新计算
+            // 开始时periodFinish为0
             rewardRate = reward.div(rewardsDuration);
         } else {
             // 剩余时间
