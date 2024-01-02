@@ -18,10 +18,13 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
 
     IERC20 public rewardsToken;
     IERC20 public stakingToken;
+    // 奖励结束时间
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
+    // 奖励持续时间
     uint256 public rewardsDuration = 60 days;
     uint256 public lastUpdateTime;
+    // 每个token奖励
     uint256 public rewardPerTokenStored;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
@@ -61,9 +64,9 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
             return rewardPerTokenStored;
         }
         return
-            rewardPerTokenStored.add(
-                lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRate).mul(1e18).div(_totalSupply)
-            );
+        rewardPerTokenStored.add(
+            lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRate).mul(1e18).div(_totalSupply)
+        );
     }
 
     function earned(address account) public view returns (uint256) {
@@ -121,11 +124,15 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     /* ========== RESTRICTED FUNCTIONS ========== */
 
     function notifyRewardAmount(uint256 reward) external onlyRewardsDistribution updateReward(address(0)) {
+        // 超过奖励结束周期了
         if (block.timestamp >= periodFinish) {
+            // 重新计算
             rewardRate = reward.div(rewardsDuration);
         } else {
+            // 剩余时间
             uint256 remaining = periodFinish.sub(block.timestamp);
             uint256 leftover = remaining.mul(rewardRate);
+            // (剩余奖励 + 新进来的奖励) / 奖励周期
             rewardRate = reward.add(leftover).div(rewardsDuration);
         }
 
@@ -134,9 +141,13 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
         uint balance = rewardsToken.balanceOf(address(this));
+        // 总奖金 / 赚取收益时间
         require(rewardRate <= balance.div(rewardsDuration), "Provided reward too high");
 
+        // 上次更新时间
         lastUpdateTime = block.timestamp;
+
+        // 设置奖励结束时间
         periodFinish = block.timestamp.add(rewardsDuration);
         emit RewardAdded(reward);
     }

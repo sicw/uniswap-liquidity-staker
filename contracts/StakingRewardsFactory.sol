@@ -68,9 +68,11 @@ contract StakingRewardsFactory is Ownable {
             info.rewardAmount = 0;
 
             require(
+            // 发放奖励token
                 IERC20(rewardsToken).transfer(info.stakingRewards, rewardAmount),
                 'StakingRewardsFactory::notifyRewardAmount: transfer failed'
             );
+            // 计算收益率
             StakingRewards(info.stakingRewards).notifyRewardAmount(rewardAmount);
         }
     }
