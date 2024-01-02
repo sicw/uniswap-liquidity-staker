@@ -20,7 +20,10 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     IERC20 public stakingToken;
     // 奖励结束时间
     uint256 public periodFinish = 0;
+
+    // 每秒收益
     uint256 public rewardRate = 0;
+
     // 奖励持续时间
     uint256 public rewardsDuration = 60 days;
     uint256 public lastUpdateTime;
@@ -64,12 +67,16 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
             return rewardPerTokenStored;
         }
         return
+        // 每个token收益数量
         rewardPerTokenStored.add(
+            // 该时间段内产生的收益数量 / 总token数量
             lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRate).mul(1e18).div(_totalSupply)
         );
     }
 
+    // 已经赚取的
     function earned(address account) public view returns (uint256) {
+        // 账户余额(质押数量) * 收益/token + 之前的奖励
         return _balances[account].mul(rewardPerToken().sub(userRewardPerTokenPaid[account])).div(1e18).add(rewards[account]);
     }
 
@@ -155,10 +162,13 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     /* ========== MODIFIERS ========== */
 
     modifier updateReward(address account) {
+        // 类似累计流动性利率一样, 累计每个token收益量
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
+            // 每次累加该用户收益
             rewards[account] = earned(account);
+            // 当前每个token收益
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
         }
         _;
