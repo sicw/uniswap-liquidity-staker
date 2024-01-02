@@ -62,25 +62,29 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         return Math.min(block.timestamp, periodFinish);
     }
 
+    // 累计时间段内每个token收益
     function rewardPerToken() public view returns (uint256) {
         if (_totalSupply == 0) {
             return rewardPerTokenStored;
         }
         return
-        // 每个token收益数量
+        // 每个token收益数量累加
         rewardPerTokenStored.add(
-            // 该时间段内产生的收益数量 / 总token数量
+            // 时间段 * 每个token每秒的收益参数 = 该时间段内每个token收益
             lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRate).mul(1e18).div(_totalSupply)
         );
     }
 
     // 已经赚取的
     function earned(address account) public view returns (uint256) {
-        // 账户余额(质押数量) * 收益/token + 之前的奖励
+        // (rewardPerToken().sub(userRewardPerTokenPaid[account]) 当前累计的 - 上次操作累计的 => 所有时间段内每个token的收益
+        // 所有量 * 所有时间段内每个token的收益 = 所有时间段内收益
+        // 再加上之前的收益 = 赚取的收益
         return _balances[account].mul(rewardPerToken().sub(userRewardPerTokenPaid[account])).div(1e18).add(rewards[account]);
     }
 
     function getRewardForDuration() external view returns (uint256) {
+        // 收益率 * 收益时长
         return rewardRate.mul(rewardsDuration);
     }
 
@@ -124,7 +128,9 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     }
 
     function exit() external {
+        // 返回质押的本金
         withdraw(_balances[msg.sender]);
+        // 返回质押的利息收益
         getReward();
     }
 
@@ -154,7 +160,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         // 上次更新时间
         lastUpdateTime = block.timestamp;
 
-        // 设置奖励结束时间
+        // 设置奖励结束时间 当前区块时间为开始时间
         periodFinish = block.timestamp.add(rewardsDuration);
         emit RewardAdded(reward);
     }
@@ -166,9 +172,9 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
-            // 每次累加该用户收益
+            // 结算上个质押周期的收益(历史收益+本周期收益)
             rewards[account] = earned(account);
-            // 当前每个token收益
+            // 累计每个时间段每个token收益
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
         }
         _;

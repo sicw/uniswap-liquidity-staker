@@ -8,6 +8,8 @@ import './StakingRewards.sol';
 contract StakingRewardsFactory is Ownable {
     // immutables
     address public rewardsToken;
+
+    // 质押奖励开始时间
     uint public stakingRewardsGenesis;
 
     // the staking tokens for which the rewards contract has been deployed
