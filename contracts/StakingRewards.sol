@@ -21,7 +21,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     // 奖励结束时间
     uint256 public periodFinish = 0;
 
-    // 每秒收益
+    // 每秒收益 n个token/秒
     uint256 public rewardRate = 0;
 
     // 奖励持续时间
@@ -68,7 +68,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
             return rewardPerTokenStored;
         }
         return
-        // 每个token收益数量累加
+        // t1-t2时段内 每个token收益量
         rewardPerTokenStored.add(
             // 时间段 * 每个token每秒的收益参数 = 该时间段内每个token收益
             lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRate).mul(1e18).div(_totalSupply)
